@@ -1,13 +1,10 @@
 import streamlit as st
 import requests
-import os
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-APPLICATION_TOKEN = os.getenv("APPLICATION_TOKEN")
-LANGFLOW_ID = os.getenv("LANGFLOW_ID")
-FLOW_ID = os.getenv("FLOW_ID")
+# Load secrets 
+APPLICATION_TOKEN = st.secrets["APPLICATION_TOKEN"]
+LANGFLOW_ID = st.secrets["LANGFLOW_ID"]
+FLOW_ID = st.secrets["FLOW_ID"]
 # Langflow API settings
 BASE_API_URL = "https://api.langflow.astra.datastax.com"
 
