@@ -1,3 +1,5 @@
 langflow
 dotenv
 requests
+streamlit
+dotenv

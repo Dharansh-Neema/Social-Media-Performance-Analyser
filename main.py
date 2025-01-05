@@ -1,109 +1,133 @@
-# Note: Replace **<YOUR_APPLICATION_TOKEN>** with your actual Application token
-
-import argparse
-import json
-from argparse import RawTextHelpFormatter
+import streamlit as st
 import requests
-from typing import Optional
-import warnings
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
-application_token = os.getenv("APPLICATION_TOKEN")
-try:
-    from langflow.load import upload_file
-except ImportError:
-    warnings.warn("Langflow provides a function to help you upload files to the flow. Please install langflow to use it.")
-    upload_file = None
-
+APPLICATION_TOKEN = os.getenv("APPLICATION_TOKEN")
+LANGFLOW_ID = os.getenv("LANGFLOW_ID")
+FLOW_ID = os.getenv("FLOW_ID")
+# Langflow API settings
 BASE_API_URL = "https://api.langflow.astra.datastax.com"
-LANGFLOW_ID = "44cbb329-e109-4913-aa6e-acf681ec677f"
-FLOW_ID = "0f3adcc7-7b2f-4e64-bc6a-4046d9f3cfa6"
-APPLICATION_TOKEN = application_token
-ENDPOINT = "" # You can set a specific endpoint name in the flow settings
 
-# You can tweak the flow by adding a tweaks dictionary
-# e.g {"OpenAI-XXXXX": {"model_name": "gpt-4"}}
-TWEAKS = {
-  "ChatInput-mXzUI": {},
-  "ParseData-zJ11W": {},
-  "Prompt-4mhUn": {},
-  "SplitText-s2Cmf": {},
-  "OpenAIModel-xmGH8": {},
-  "ChatOutput-uBbeZ": {},
-  "AstraDB-pN8mR": {},
-  "OpenAIEmbeddings-WYjop": {},
-  "AstraDB-tS6dm": {},
-  "OpenAIEmbeddings-OBOTD": {},
-  "File-tVkKz": {}
-}
+# Custom CSS for styling
+st.markdown("""
+    <style>
+    .conversation-box {
+        background-color: #FFFFFF;
+        border: 1px solid #E0E0E0;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .user-message {
+        background-color: #E8F0FE;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 10px 0;
+        font-size: 18px;
+        color: #2C3E50;
+    }
+    .ai-message {
+        background-color: #F0F8FF;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 10px 0;
+        font-size: 18px;
+        color: #34495E;
+    }
+    .chat-timestamp {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+        text-align: right;
+    }
+    .stButton>button {
+        background-color: #4CAF50;
+        color: white;
+        font-size: 16px;
+        border-radius: 5px;
+        padding: 10px 20px;
+    }
+    .stButton>button:hover {
+        background-color: #45a049;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-def run_flow(message: str,
-  endpoint: str,
-  output_type: str = "chat",
-  input_type: str = "chat",
-  tweaks: Optional[dict] = None,
-  application_token: Optional[str] = None) -> dict:
-    """
-    Run a flow with a given message and optional tweaks.
-
-    :param message: The message to send to the flow
-    :param endpoint: The ID or the endpoint name of the flow
-    :param tweaks: Optional tweaks to customize the flow
-    :return: The JSON response from the flow
-    """
-    api_url = f"{BASE_API_URL}/lf/{LANGFLOW_ID}/api/v1/run/{endpoint}"
-
+def run_flow(message: str):
+    api_url = f"{BASE_API_URL}/lf/{LANGFLOW_ID}/api/v1/run/{FLOW_ID}"
     payload = {
         "input_value": message,
-        "output_type": output_type,
-        "input_type": input_type,
+        "output_type": "chat",
+        "input_type": "chat"
     }
-    headers = None
-    if tweaks:
-        payload["tweaks"] = tweaks
-    if application_token:
-        headers = {"Authorization": "Bearer " + application_token, "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {APPLICATION_TOKEN}", "Content-Type": "application/json"}
+
     response = requests.post(api_url, json=payload, headers=headers)
-    return response.json()
-
-def main():
-    parser = argparse.ArgumentParser(description="""Run a flow with a given message and optional tweaks.
-Run it like: python <your file>.py "your message here" --endpoint "your_endpoint" --tweaks '{"key": "value"}'""",
-        formatter_class=RawTextHelpFormatter)
-    parser.add_argument("message", type=str, help="Give some insights about reels")
-    parser.add_argument("--endpoint", type=str, default=ENDPOINT or FLOW_ID, help="The ID or the endpoint name of the flow")
-    parser.add_argument("--tweaks", type=str, help="JSON string representing the tweaks to customize the flow", default=json.dumps(TWEAKS))
-    parser.add_argument("--application_token", type=str, default=APPLICATION_TOKEN, help="Application Token for authentication")
-    parser.add_argument("--output_type", type=str, default="chat", help="The output type")
-    parser.add_argument("--input_type", type=str, default="chat", help="The input type")
-    parser.add_argument("--upload_file", type=str, help="Path to the file to upload", default=None)
-    parser.add_argument("--components", type=str, help="Components to upload the file to", default=None)
-
-    args = parser.parse_args()
     try:
-      tweaks = json.loads(args.tweaks)
-    except json.JSONDecodeError:
-      raise ValueError("Invalid tweaks JSON string")
+        response_json = response.json()
+        outputs_list = response_json.get("outputs", [])
+        
+        if outputs_list and "outputs" in outputs_list[0]:
+            result = outputs_list[0]["outputs"][0].get("results", {}).get("message", {})
+            text_response = result.get("text", "No text found in the response.")
+        else:
+            text_response = "Invalid response format received from the server."
 
-    if args.upload_file:
-        if not upload_file:
-            raise ImportError("Langflow is not installed. Please install it to use the upload_file function.")
-        elif not args.components:
-            raise ValueError("You need to provide the components to upload the file to.")
-        tweaks = upload_file(file_path=args.upload_file, host=BASE_API_URL, flow_id=ENDPOINT, components=args.components, tweaks=tweaks)
+        return text_response
+    except Exception as e:
+        return f"Error parsing response: {e}"
 
-    response = run_flow(
-        message=args.message,
-        endpoint=args.endpoint,
-        output_type=args.output_type,
-        input_type=args.input_type,
-        tweaks=tweaks,
-        application_token=args.application_token
-    )
+# Title
+st.title("📊 Social Media Performance Analysis Chatbot")
+st.markdown("""
+    <div style='font-size: 18px; color: #666; margin-bottom: 30px;'>
+        Ask questions about your social media post performance.
+    </div>
+""", unsafe_allow_html=True)
 
-    print(json.dumps(response, indent=2))
+# Initialize chat history
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-if __name__ == "__main__":
-    main()
+# User input section with improved styling
+user_input = st.text_input("Enter your query here:", 
+                          key="user_input",
+                          placeholder="Type your question...")
+
+# Handle user input and display chat history
+if st.button("Analyze", key="analyze_button"):
+    if user_input:
+        # Get the response first
+        response_message = run_flow(user_input)
+        
+        # Add both messages as a pair to chat history
+        st.session_state.chat_history.insert(0, {
+            "user_message": user_input,
+            "ai_message": response_message,
+            "timestamp": "Just now"
+        })
+
+        # Clear input box after sending the message
+        st.rerun()
+
+# Display chat history in reverse order with improved styling
+for i, conversation in enumerate(st.session_state.chat_history):
+    st.markdown(f"""
+        <div class='conversation-box'>
+            <div class='user-message'>
+                <strong>You</strong><br>
+                {conversation["user_message"]}
+            </div>
+            <div class='ai-message'>
+                <strong>AI</strong><br>
+                {conversation["ai_message"]}
+            </div>
+            <div class='chat-timestamp'>{conversation["timestamp"]}</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+#Footer note
