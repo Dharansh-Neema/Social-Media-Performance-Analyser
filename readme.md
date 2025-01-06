@@ -2,7 +2,8 @@
 
 ## 🚀 Demo
 
-[Live Demo](https://social-media-performance-analyser.streamlit.app/)
+[Website](https://social-media-performance-analyser.streamlit.app/)
+[Video Demo](https://youtu.be/ON_vWpoTdn0)
 
 ## 📖 Project Description
 
