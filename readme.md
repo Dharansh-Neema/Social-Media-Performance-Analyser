@@ -1,4 +1,4 @@
-# Social Media Performance Analysis using Langflow and DataStax
+# Social Media Performance Analysis using Langflow and Astra DB
 
 ## 🚀 Demo
 
@@ -6,7 +6,7 @@
 
 ## 📖 Project Description
 
-The Social Media Performance Analysis project provides insightful analytics on social media posts using a Retrieval-Augmented Generation (RAG) flow. The project is trained on customized datasets and leverages Langflow for flow management while DataStax VectorDB is used for efficient vector-based data storage and retrieval.
+The Social Media Performance Analysis project provides insightful analytics on social media posts using a Retrieval-Augmented Generation (RAG) flow. The project is trained on customized datasets and leverages Langflow for flow management while Astra VectorDB is used for efficient vector-based data storage and retrieval.
 
 ## 📊 Dataset Features
 
